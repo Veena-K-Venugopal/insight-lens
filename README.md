@@ -15,13 +15,14 @@ It transforms pasted receipts, invoices, or order emails into concise 5-bullet a
 
 ## Project Structure
 
-insightlens/
+<pre>insightlens/
 ├─ public/
 │  └─ index.html          # main UI
 ├─ src/
 │  ├─ styles.css          # styling & dark theme
 │  └─ main.js             # button wiring + status logic
 └─ README.md
+</pre>
 
 ---
 
