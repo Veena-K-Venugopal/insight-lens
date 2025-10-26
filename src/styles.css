@@ -1,0 +1,91 @@
+:root {
+    --bg: #0b0f14;
+    --panel: #121923;
+    --text: #e6edf3;
+    --muted: #93a1b1;
+}
+
+* {
+    box-sizing: border-box
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font: 15px/1.5 system-ui, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.topbar {
+    padding: 14px 18px;
+    border-bottom: 1px solid #1f2937;
+}
+
+.container {
+    max-width: 900px;
+    margin: 16px auto;
+    padding: 0 16px
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 12px
+}
+
+.input-panel textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #233446;
+    background: #0d141d;
+    color: var(--text)
+}
+
+.actions-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px
+}
+
+.spacer {
+    flex: 1
+}
+
+.btn {
+    border: 1px solid #2b3c52;
+    background: #152233;
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer
+}
+
+.btn.ghost {
+    background: transparent
+}
+
+.status {
+    margin-top: 8px;
+    color: var(--muted);
+    min-height: 20px
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0
+}

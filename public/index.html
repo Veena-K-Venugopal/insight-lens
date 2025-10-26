@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>InsightLens</title>
+    <link rel="stylesheet" href="../src/styles.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <h1>InsightLens</h1>
+    </header>
+
+    <main class="container">
+        <section class="panel input-panel">
+            <label for="rawInput" class="sr-only">Paste text</label>
+            <textarea id="rawInput" placeholder="Paste receipt/invoice/order email..."></textarea>
+
+            <div class="actions-row">
+                <button id="btnSummarize" class="btn">Summarize</button>
+                <button id="btnActionize" class="btn">Refine - 5 bullets</button>
+                <button id="btnProofread" class="btn">Proofread</button>
+                <span class="spacer"></span>
+                <button id="btnClear" class="btn ghost">Clear</button>
+            </div>
+
+            <div id="status" class="status"></div>
+        </section>
+    </main>
+
+    <script src="../src/main.js" defer></script>
+</body>
+
+</html>
