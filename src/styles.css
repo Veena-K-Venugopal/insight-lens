@@ -89,3 +89,21 @@ body {
     clip: rect(0, 0, 0, 0);
     border: 0
 }
+
+.tab.is-active {
+    outline: 1px solid #2b3c52;
+}
+
+.panels {
+    margin-top: 10px;
+}
+
+.panel-body[hidden] {
+    display: none;
+}
+
+.out {
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 120px;
+}

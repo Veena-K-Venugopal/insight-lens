@@ -28,6 +28,36 @@
 
             <div id="status" class="status"></div>
         </section>
+
+        <!-- Stage 2 section starts here -->
+
+        <section class="panel output-panel">
+            <div class="actions-row" role="tablist" aria-label="Outputs">
+                <button id="tabSummary" class="btn tab is-active" role="tab" aria-selected="true"
+                    aria-controls="panelSummary" data-tab="summary">Summary</button>
+                <button id="tabBrief" class="btn tab" role="tab" aria-selected="false" aria-controls="panelBrief"
+                    data-tab="brief">Brief</button>
+                <button id="tabProof" class="btn tab" role="tab" aria-selected="false" aria-controls="panelProof"
+                    data-tab="proof">Proofreader</button>
+                <span class="spacer"></span>
+                <button class="btn" data-copy="active">Copy</button>
+                <button class="btn" data-save="active">Save</button>
+            </div>
+            <div class="panels">
+                <div id="panelSummary" class="panel-body is-active" role="tabpanel" data-panel="summary">
+                    <pre id="outSummary" class="out"></pre>
+                </div>
+                <div id="panelBrief" class="panel-body" role="tabpanel" data-panel="brief" hidden>
+                    <pre id="outBrief" class="out"></pre>
+                </div>
+                <div id="panelProof" class="panel-body" role="tabpanel" data-panel="proof" hidden>
+                    <pre id="outProof" class="out"></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stage 2 section ends here -->
+
     </main>
 
     <script src="../src/main.js" defer></script>

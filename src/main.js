@@ -32,4 +32,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     setStatus('Ready.');
+
+    // --- Stage 2: Output tabs + copy/save ---
+
+    // Tab switching
+
+    function showTab(name) {
+        document.querySelectorAll('.tab').forEach(t => {
+            const on = t.dataset.tab === name;
+            t.classList.toggle('is-active', on);
+            t.setAttribute('aria-selected', String(on));
+        });
+        document.querySelectorAll('[data-panel]').forEach(p => {
+            const on = p.dataset.panel === name;
+            p.toggleAttribute('hidden', !on);
+            p.classList.toggle('is-active', on);
+        });
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            showTab(tab.dataset.tab);
+        });
+    });
+
+    // Copy/Save for the active panel
+
 });
