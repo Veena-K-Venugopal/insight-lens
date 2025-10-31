@@ -28,6 +28,39 @@
 
             <div id="status" class="status"></div>
         </section>
+
+        <!-- Stage 2 section starts here -->
+
+        <section class="panel output-panel" aria-labelledby="ResultsTitle">
+            <div class="tabs" role="tablist" aria-label="Output views">
+                <button class="tab active" role="tab" aria-selected="true" aria-controls="tabSummary"
+                    id="tabbtn-summary">Summary</button>
+                <button class="tab active" role="tab" aria-selected="false" aria-controls="tabBullets"
+                    id="tabbtn-bullets">Bullets</button>
+                <button class="tab active" role="tab" aria-selected="false" aria-controls="tabProofread"
+                    id="tabbtn-proofread">Proofread</button>
+                <span class="spacer"></span>
+                <div class="toolbar">
+                    <button id="btnCopy" class="btn small" title="Copy current tab">Copy</button>
+                    <button id="btnSave" class="btn small ghost" title="Save (stub)">Save</button>
+                </div>
+            </div>
+            <div class="outwrap">
+                <h2 id="resultsTitle" class="sr-only">Results</h2>
+                <div id="tabSummary" class="tabpanel outbox" role="tabpanel" data-panel="tabbtn-summary">
+                    <pre id="outSummary" class="pre"></pre>
+                </div>
+                <div id="tabBullets" class="tabpanel outbox hidden" role="tabpanel" data-panel="tabbtn-bullets">
+                    <pre id="outBullets" class="pre"></pre>
+                </div>
+                <div id="tabProofread" class="tabpanel outbox hidden" role="tabpanel" data-panel="tabbtn-proofread">
+                    <pre id="outProofread" class="pre"></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stage 2 section ends here -->
+
     </main>
 
     <script src="../src/main.js" defer></script>
