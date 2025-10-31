@@ -5,11 +5,14 @@ It transforms pasted receipts, invoices, or order emails into concise 5-bullet a
 
 ---
 
-## Current Stage: 1 — Core UI & Local Testing
-✅ Base layout (textarea + buttons + status line)  
-✅ Buttons wired: Summarize / Refine (5 bullets) / Proofread / Clear  
-✅ Local server tested via **VS Code Live Server**  
-🛠️ Next: Add output tabs (Summary / Brief / Proofreader) with copy/save placeholders  
+✅ Stage 1 – Base UI & Local Testing  
+✅ Stage 2 – Output Tabs (Summary / Brief / Proofreader) + Copy/Save Placeholders  
+✅ **Stage 3 – Input Validation & Dynamic Status System**  
+ • `aria-live` status region for accessible feedback  
+ • `setStatus()` helper with `info / success / error` states  
+ • Red outline + shake animation for invalid input  
+ • Updated handlers with progress messages (“Summarizing… → Done.”)  
+ • Colored feedback for Copy / Save actions    
 
 ---
 
@@ -27,10 +30,10 @@ It transforms pasted receipts, invoices, or order emails into concise 5-bullet a
 ---
 
 ### Tech Stack
-- Frontend: HTML5 + CSS3 + Vanilla JavaScript  
-- AI Layer: Chrome Built-in AI APIs *(Summarizer, Prompt, Proofreader – upcoming)*  
-- Infra: No backend — lightweight, privacy-friendly  
-- Deployment: GitHub Pages or Netlify  
+- **Frontend**: HTML5 + CSS3 + Vanilla JavaScript  
+- **AI Layer**: Chrome Built-in AI APIs *(Summarizer, Prompt, Proofreader – upcoming)*  
+- **Infra**: No backend — lightweight, privacy-friendly  
+- **Deployment**: GitHub Pages or Netlify  
 
 ---
 
@@ -38,8 +41,8 @@ It transforms pasted receipts, invoices, or order emails into concise 5-bullet a
 1. Open the project in VS Code  
 2. Right-click `public/index.html` → **Open with Live Server**  
 3. Visit [http://127.0.0.1:5500/public/index.html](http://127.0.0.1:5500/public/index.html)  
-4. Paste text → test the buttons → see status updates in console
-5. Watch status updates and console logs in DevTools
+4. Paste text → click **Summarize**, **Refine**, or **Proofread**
+5. Observe status messages (Ready / Summarizing… / Done.) and colored feedback below buttons
 
 ---
 
@@ -47,9 +50,11 @@ It transforms pasted receipts, invoices, or order emails into concise 5-bullet a
 | Stage | Goal | Status |
 |-------|------|--------|
 | 1 | Base UI + Local Server | ✅ Complete |
-| 2 | Output Tabs (Summary / Brief / Proofreader) | 🔜 In Progress |
-| 3 | Integrate Chrome AI APIs (Summarizer / Proofreader) | ⏳ |
-| 4 | Save / Export / Deploy to Netlify | ⏳ |
+| 2 | Output Tabs + Copy/Save Placeholders | ✅ Complete |
+| 3 | Input Validation + Status Feedback | ✅ Complete |
+| 4 | Save / Export / localStorage Persistence | ⏳ Next |
+| 5 | Chrome AI API Integration (Summarizer / Proofreader) | ⏳ Planned |
+| 6 | Deployment + Final Polish | ⏳ Planned |
 
 ---
 
@@ -62,7 +67,13 @@ All within your browser, with no data ever leaving your device..
 
 ### Author
 **Veena K. Venugopal**  
-👩‍💻 [GitHub](https://github.com/Veena-K-Venugopal) • 🌐 [Portfolio (coming soon)](#)
+👩‍💻 [GitHub](https://github.com/Veena-K-Venugopal) 
+
+
 
 ---
 
+### Releases
+- **v1-stage1:** Core UI + Local Testing  
+- **v2-stage2:** Output Tabs + Copy/Save Placeholders  
+- **v3-stage3:** Input Validation + Status Feedback  
