@@ -90,20 +90,66 @@ body {
     border: 0
 }
 
-.tab.is-active {
-    outline: 1px solid #2b3c52;
+
+.output-panel {
+    margin-top: 14px;
 }
 
-.panels {
-    margin-top: 10px;
+.tabs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
 }
 
-.panel-body[hidden] {
-    display: none;
+.tab {
+    border: 1px solid #2b3c52;
+    background-color: #0f1926;
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
 }
 
-.out {
-    white-space: pre-wrap;
-    word-break: break-word;
+.tab.active {
+    background-color: #1a2a41;
+    border-color: #3a5476;
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+}
+
+.btn.small {
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 8px;
+}
+
+.outwrap {
+    border-top: 1px solid #1f2937;
+    padding-top: 8px;
+}
+
+.outbox {
+    border: 1px dashed #233446;
+    border-radius: 10px;
+    padding: 10px;
+    background: #0d141d;
     min-height: 120px;
+}
+
+.pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: ui-monoscope, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: #cfe3ff;
+}
+
+.hidden {
+    display: none;
 }
