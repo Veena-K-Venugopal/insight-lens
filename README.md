@@ -19,16 +19,22 @@ It transforms pasted receipts, invoices, or order emails into concise 5-bullet a
 
 
 ✅ Stage 1 – Base UI & Local Testing  
+
 ✅ Stage 2 – Output Tabs (Summary / Brief / Proofreader) + Copy/Save Placeholders  
+
 ✅ Stage 3 – Input Validation & Dynamic Status System  
+
 ✅ Stage 4 – Save & Copy Persistence (LocalStorage Across Sessions)
+
 ✅ Stage 5 – Simulated Chrome AI Integration (Mock Async API)
+
 ✅ Stage 6 – Real Chrome AI Integration (Final Submission)
- • Implements Prompt API and Summarizer with graceful fallbacks
- • Detects on-device model availability and download progress
- • Adds busy-state management and consistent status feedback
- • Maintains autosave / restore / manual save workflow
- • Final submission build for Google Chrome Built-in AI Challenge 2025
+
+• Implements Prompt API and Summarizer with graceful fallbacks
+• Detects on-device model availability and download progress
+• Adds busy-state management and consistent status feedback
+• Maintains autosave / restore / manual save workflow
+• Final submission build for Google Chrome Built-in AI Challenge 2025
 
 ---
 
