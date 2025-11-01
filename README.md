@@ -29,6 +29,7 @@ It transforms pasted receipts, invoices, or order emails into concise 5-bullet a
  • Adds busy-state management and consistent status feedback
  • Maintains autosave / restore / manual save workflow
  • Final submission build for Google Chrome Built-in AI Challenge 2025
+
 ---
 
 ## Project Structure
