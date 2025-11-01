@@ -36,6 +36,49 @@ async function copyText(txt, notify = () => { }) {
     }
 }
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// simulated chrome AI call
+
+async function callChromeAI(mode, text) {
+    const t = (text || '').trim();
+    const len = t.length;
+    // fake delay
+    const delay = 800 + (len % 401);
+    await sleep(delay);
+
+    const words = t.split(/\s+/).filter(Boolean);
+    const sentences = t.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const firstN = (n) => words.slice(0, n).join(' ') + (words.length > n ? '…' : '');
+    const uniqueKeywords = Array.from(
+        new Set(words.map(w => w.replace(/[^\w'-]/g, '').toLowerCase()).filter(w => w.length > 3))
+    );
+
+    const topKW = uniqueKeywords.slice(0, 7);
+
+    if (mode === 'summary') {
+        const head = sentences.length ? sentences.slice(0, 2).join(' ') : firstN(35);
+        return `- Summary (simulated) -\nLength: ${len} chars\n\n${head}`;
+    }
+
+    if (mode === 'bullets') {
+        const picks = (topKW.length >= 5 ? topKW.slice(0, 5) : words.slice(0, 5))
+            .map((w, i) => `• (${i + 1}) ${String(w).slice(0, 140)}${String(w).length > 140 ? '...' : ''}`);
+        return picks.join('\n');
+    }
+
+    if (mode === 'proofread') {
+        let out = t
+            .replace(/\bi\b/g, 'I')
+            .replace(/\s+/g, ' ')
+            .replace(/\s+([.,!?;:])/g, '$1')
+            .trim();
+
+        return out.split('\n').map((l, i) => `${String(i + 1).padStart(3, ' ')} | ${l}`).join('\n');
+    }
+    return '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     const rawInput = document.getElementById('rawInput');
@@ -52,6 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
         bullets: { btn: document.getElementById('tabbtn-bullets'), panel: document.getElementById('tabBullets'), out: document.getElementById('outBullets') },
         proof: { btn: document.getElementById('tabbtn-proofread'), panel: document.getElementById('tabProofread'), out: document.getElementById('outProofread') },
     };
+
+    // busy gate (disable buttons during async work)
+    const container = document.querySelector('.container') || document.body;
+    const allActionButtons = [btnSummarize, btnActionize, btnProofread, btnClear, btnCopy, btnSave].filter(Boolean);
+    let BUSY = false;
+    function setBusy(flag, msg = '') {
+        BUSY = !!flag;
+        allActionButtons.forEach(b => b.disabled = BUSY);
+        container.setAttribute('aria-busy', String(BUSY));
+        if (flag && msg) {
+            setStatus(msg, 'info');
+        }
+    }
 
     // status helper
     function setStatus(text, type = 'info') {
@@ -99,67 +155,73 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // button handlers
-    btnSummarize.addEventListener('click', () => {
+    btnSummarize.addEventListener('click', async () => {
         const src = getInputOrFlag();
-        if (!src) return;
-        setStatus('Summarizing...', 'info');
+        if (!src || BUSY) return;
+        setBusy(true, 'Summarizing...');
 
-        setTimeout(() => {
-            const len = src.length;
-            console.log('[Summarize]', len);
-            tabs.summary.out.textContent = src ? `- Summary (stub) -\nLength: ${len} chars\n\n${src.slice(0, 400)}${len > 400 ? '...' : ''} ` : '';
+        try {
+            const out = await callChromeAI('summary', src);
+            tabs.summary.out.textContent = out;
             activateTab('summary');
             saveState(undefined, {
                 summary: tabs.summary.out.textContent || '',
                 bullets: tabs.bullets.out.textContent || '',
                 proofread: tabs.proof.out.textContent || '',
-            })
+            });
             setStatus('Done.', 'success');
-        }, 600);
+        } catch (err) {
+            console.error(err);
+            setStatus('Failed to summarize.', 'error');
+        } finally {
+            setBusy(false);
+        }
     });
 
-    btnActionize.addEventListener('click', () => {
+    btnActionize.addEventListener('click', async () => {
         const src = getInputOrFlag();
-        if (!src) return;
-        setStatus('Refining...', 'info');
+        if (!src || BUSY) return;
+        setBusy(true, 'Generating 5 bullets...');
 
-        setTimeout(() => {
-            const len = src.length;
-            const lines = src.split(/\n+/).map(s => s.trim()).filter(Boolean);
-            console.log('[Refine]', len);
-            const bullets = lines.slice(0, 5).map((l, i) => `• (${i + 1}) ${l.slice(0, 140)}${l.length > 140 ? '...' : ''}`);
-            tabs.bullets.out.textContent = bullets.length ? bullets.join('\n') : '';
+        try {
+            const out = await callChromeAI('bullets', src);
+            tabs.bullets.out.textContent = out;
             activateTab('bullets');
-
             saveState(undefined, {
                 summary: tabs.summary.out.textContent || '',
                 bullets: tabs.bullets.out.textContent || '',
                 proofread: tabs.proof.out.textContent || '',
-            })
-
+            });
             setStatus('Done.', 'success');
-        }, 600);
+        } catch (err) {
+            console.error(err);
+            setStatus('Failed to refine.', 'error');
+        } finally {
+            setBusy(false);
+        }
     });
 
-    btnProofread.addEventListener('click', () => {
+    btnProofread.addEventListener('click', async () => {
         const src = getInputOrFlag();
-        if (!src) return;
-        setStatus('Proofreading...', 'info');
+        if (!src || BUSY) return;
+        setBusy(true, 'Proofreading...');
 
-        setTimeout(() => {
-            const len = src.length;
-            console.log('[Proofread]', len);
-            const proof = src ? src.split('\n').map((l, i) => `${String(i + 1).padStart(3, ' ')} | ${l}`).join('\n') : '';
-            tabs.proof.out.textContent = proof;
+        try {
+            const out = await callChromeAI('proofread', src);
+            tabs.proof.out.textContent = out;
             activateTab('proof');
-
             saveState(undefined, {
                 summary: tabs.summary.out.textContent || '',
                 bullets: tabs.bullets.out.textContent || '',
                 proofread: tabs.proof.out.textContent || '',
-            })
+            });
             setStatus('Done.', 'success');
-        }, 600);
+        } catch (err) {
+            console.error(err);
+            setStatus('Failed to proofread.', 'error');
+        } finally {
+            setBusy(false);
+        }
     });
 
     btnClear.addEventListener('click', () => {
@@ -175,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Stage 2: Output tabs + copy/save ---
 
     function activateTab(name) {
         Object.entries(tabs).forEach(([key, { btn, panel }]) => {
