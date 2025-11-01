@@ -1,3 +1,41 @@
+const STORAGE_KEYS = { RAW: 'IL_RAW', OUT: 'IL_OUT' };
+
+function saveState(raw, outs) {
+    try {
+        if (typeof raw === 'string') localStorage.setItem(STORAGE_KEYS.RAW, raw);
+        if (outs && typeof outs === 'object') {
+            localStorage.setItem(STORAGE_KEYS.OUT, JSON.stringify(outs));
+        }
+    } catch (err) {
+        console.warn('localStorage save failed', err);
+    }
+}
+
+function loadState() {
+    const raw = localStorage.getItem(STORAGE_KEYS.RAW) || '';
+    let outs = { summary: '', bullets: '', proofread: '' };
+    try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.OUT) || '{}');
+        outs = { ...outs, ...parsed };
+    } catch { }
+    return { raw, outs };
+}
+
+async function copyText(txt, notify = () => { }) {
+    try {
+        await navigator.clipboard.writeText(txt || '');
+        notify('Copied to clipboard', 'success');
+    } catch {
+        const ta = document.createElement('textarea');
+        ta.value = txt || '';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        notify('Copied to clipboard.', 'success');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     const rawInput = document.getElementById('rawInput');
@@ -6,14 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnActionize = document.getElementById('btnActionize');
     const btnProofread = document.getElementById('btnProofread');
     const btnClear = document.getElementById('btnClear');
+    const btnCopy = document.getElementById('btnCopy');
+    const btnSave = document.querySelector('.input-panel #btnSave');
 
     const tabs = {
         summary: { btn: document.getElementById('tabbtn-summary'), panel: document.getElementById('tabSummary'), out: document.getElementById('outSummary') },
         bullets: { btn: document.getElementById('tabbtn-bullets'), panel: document.getElementById('tabBullets'), out: document.getElementById('outBullets') },
         proof: { btn: document.getElementById('tabbtn-proofread'), panel: document.getElementById('tabProofread'), out: document.getElementById('outProofread') },
     };
-    const btnCopy = document.getElementById('btnCopy');
-    const btnSave = document.getElementById('btnSave');
 
     // status helper
     function setStatus(text, type = 'info') {
@@ -21,6 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMsg.textContent = text;
         statusMsg.classList.remove('info', 'success', 'error');
         statusMsg.classList.add(type);
+    }
+
+    // restore state
+    const { raw, outs } = loadState();
+    if (raw) rawInput.value = raw;
+    if (outs.summary) tabs.summary.out.textContent = outs.summary;
+    if (outs.bullets) tabs.bullets.out.textContent = outs.bullets;
+    if (outs.proofread) tabs.proof.out.textContent = outs.proofread;
+    if (raw || outs.summary || outs.bullets || outs.proofread) {
+        setStatus('Restored last session.', 'success');
     }
 
     // input validator
@@ -36,12 +84,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return v;
     }
 
-    //input listener
+    //input listener + autosave
+    let autosaveTimer;
     rawInput.addEventListener('input', () => {
         if (rawInput.value.trim()) {
             rawInput.classList.remove('invalid');
             setStatus('Ready.', 'info');
         }
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(() => {
+            saveState(rawInput.value);
+            // keep status calm
+        }, 300);
     });
 
     // button handlers
@@ -55,7 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[Summarize]', len);
             tabs.summary.out.textContent = src ? `- Summary (stub) -\nLength: ${len} chars\n\n${src.slice(0, 400)}${len > 400 ? '...' : ''} ` : '';
             activateTab('summary');
-
+            saveState(undefined, {
+                summary: tabs.summary.out.textContent || '',
+                bullets: tabs.bullets.out.textContent || '',
+                proofread: tabs.proof.out.textContent || '',
+            })
             setStatus('Done.', 'success');
         }, 600);
     });
@@ -73,6 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tabs.bullets.out.textContent = bullets.length ? bullets.join('\n') : '';
             activateTab('bullets');
 
+            saveState(undefined, {
+                summary: tabs.summary.out.textContent || '',
+                bullets: tabs.bullets.out.textContent || '',
+                proofread: tabs.proof.out.textContent || '',
+            })
+
             setStatus('Done.', 'success');
         }, 600);
     });
@@ -89,6 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
             tabs.proof.out.textContent = proof;
             activateTab('proof');
 
+            saveState(undefined, {
+                summary: tabs.summary.out.textContent || '',
+                bullets: tabs.bullets.out.textContent || '',
+                proofread: tabs.proof.out.textContent || '',
+            })
             setStatus('Done.', 'success');
         }, 600);
     });
@@ -99,6 +168,11 @@ document.addEventListener('DOMContentLoaded', () => {
         tabs.bullets.out.textContent = '';
         tabs.proof.out.textContent = '';
         setStatus('Cleared. Paste new text to begin.', 'info');
+        saveState('', {
+            summary: '',
+            bullets: '',
+            proofread: '',
+        });
     });
 
     // --- Stage 2: Output tabs + copy/save ---
@@ -139,20 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnSave.addEventListener('click', () => {
-        const t = currentTab();
-        const content = tabs[t].out.textContent || '';
-        if (!content) {
-            setStatus('Nothing to save. ', 'error');
-            return;
+        const outs = {
+            summary: tabs.summary.out.textContent || '',
+            bullets: tabs.bullets.out.textContent || '',
+            proofread: tabs.proof.out.textContent || '',
         }
-        const payload = {
-            tab: t,
-            createdAt: new Date().toISOString(),
-            preview: content.slice(0, 120),
-            length: content.length
-        };
-        console.log('[Save stub]', payload);
-        setStatus(`Saved (stub) "${t}" - ${payload.length} chars.`, 'success');
+        saveState(rawInput.value, outs);
+        setStatus('Saved.', 'success');
     });
 
     setStatus('Ready.', 'info');
