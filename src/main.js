@@ -36,48 +36,83 @@ async function copyText(txt, notify = () => { }) {
     }
 }
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// simulated chrome AI call
-
-async function callChromeAI(mode, text) {
-    const t = (text || '').trim();
-    const len = t.length;
-    // fake delay
-    const delay = 800 + (len % 401);
-    await sleep(delay);
-
-    const words = t.split(/\s+/).filter(Boolean);
-    const sentences = t.split(/(?<=[.!?])\s+/).filter(Boolean);
-    const firstN = (n) => words.slice(0, n).join(' ') + (words.length > n ? '…' : '');
-    const uniqueKeywords = Array.from(
-        new Set(words.map(w => w.replace(/[^\w'-]/g, '').toLowerCase()).filter(w => w.length > 3))
-    );
-
-    const topKW = uniqueKeywords.slice(0, 7);
-
-    if (mode === 'summary') {
-        const head = sentences.length ? sentences.slice(0, 2).join(' ') : firstN(35);
-        return `- Summary (simulated) -\nLength: ${len} chars\n\n${head}`;
-    }
-
-    if (mode === 'bullets') {
-        const picks = (topKW.length >= 5 ? topKW.slice(0, 5) : words.slice(0, 5))
-            .map((w, i) => `• (${i + 1}) ${String(w).slice(0, 140)}${String(w).length > 140 ? '...' : ''}`);
-        return picks.join('\n');
-    }
-
-    if (mode === 'proofread') {
-        let out = t
-            .replace(/\bi\b/g, 'I')
-            .replace(/\s+/g, ' ')
-            .replace(/\s+([.,!?;:])/g, '$1')
-            .trim();
-
-        return out.split('\n').map((l, i) => `${String(i + 1).padStart(3, ' ')} | ${l}`).join('\n');
-    }
-    return '';
+// --- Stage 6: Chrome AI adapter (Prompt API + Summarizer) ---
+async function getPromptAvailability(options = {}) {
+    try {
+        if (!('LanguageModel' in self)) return 'unavailable';
+        const avail = await LanguageModel.availability(options);
+        if (avail === 'readily') return 'available';
+        if (avail === 'after-download') return 'downloadable';
+        return 'unavailable';
+    } catch { return 'unavailable'; }
 }
+
+async function getSummarizerAvailability(options = {}) {
+    try {
+        if (!('Summarizer' in self)) return 'unavailable';
+        const avail = await Summarizer.availability(options);
+        if (avail === 'readily') return 'available';
+        if (avail === 'after-download') return 'downloadable';
+        return 'unavailable';
+    } catch { return 'unavailable'; }
+}
+
+async function createPromptSession(opts = {}) {
+    return await LanguageModel.create({
+        expectedInputs: [{ type: 'text', languages: ['en'] }],
+        expectedOutputs: [{ type: 'text', languages: ['en'] }],
+        ...opts
+    });
+}
+
+async function createSummarizer(opts = {}) {
+    return await Summarizer.create({
+        type: 'key-points',
+        format: 'markdown',
+        length: 'medium',
+        monitor(m) {
+            m.addEventListener('downloadprogress', (e) => {
+                if (typeof setStatus === 'function') {
+                    setStatus(`Downloading on-device model… ${Math.round((e.loaded || 0) * 100)}%`);
+                }
+            });
+        },
+        ...opts
+    });
+}
+
+// Core runner used by button handlers
+async function runWithChromeAI(kind, text, { context = '' } = {}) {
+    const promptAvail = await getPromptAvailability();
+    if (promptAvail === 'available') {
+        const session = await createPromptSession();
+        const prompts = {
+            summarize: `Summarize the input into 5 concise markdown bullet points.\n\nInput:\n${text}`,
+            refine: `Rewrite the input as 5 crisp, action-focused bullets (keep key entities, numbers, and dates). Output markdown bullets only.\n\nInput:\n${text}`,
+            proofread: `Proofread the input. Fix grammar/clarity, keep meaning and tone. Return corrected text only.\n\nInput:\n${text}`
+        };
+        return await session.prompt(prompts[kind] ?? text);
+    }
+    if (promptAvail === 'downloadable') {
+        if (typeof setStatus === 'function') setStatus('Preparing on-device model (download required)…');
+    }
+
+    if (kind === 'summarize') {
+        const sumAvail = await getSummarizerAvailability();
+        if (sumAvail === 'available' || sumAvail === 'downloadable') {
+            const summarizer = await createSummarizer();
+            return await summarizer.summarize(text, { context });
+        }
+    }
+
+    if (!('LanguageModel' in self) && ('ai' in self) && typeof window.ai?.createTextSession === 'function') {
+        const s = await window.ai.createTextSession();
+        return await s.prompt(text);
+    }
+
+    throw new Error('AI_UNAVAILABLE');
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -150,8 +185,27 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(() => {
             saveState(rawInput.value);
-            // keep status calm
         }, 300);
+    });
+
+    function activateTab(name) {
+        Object.entries(tabs).forEach(([key, { btn, panel }]) => {
+            const isActive = key === name;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            panel.classList.toggle('hidden', !isActive);
+        });
+    }
+
+    function currentTab() {
+        if (tabs.summary.btn.classList.contains('active')) return 'summary';
+        if (tabs.bullets.btn.classList.contains('active')) return 'bullets';
+        return 'proof';
+    }
+
+    // wire tab buttons (define then wire — keeps helpers and wiring together)
+    Object.entries(tabs).forEach(([key, { btn }]) => {
+        if (btn) btn.addEventListener('click', () => activateTab(key));
     });
 
     // button handlers
@@ -161,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setBusy(true, 'Summarizing...');
 
         try {
-            const out = await callChromeAI('summary', src);
+            const out = await runWithChromeAI('summarize', src);
             tabs.summary.out.textContent = out;
             activateTab('summary');
             saveState(undefined, {
@@ -172,7 +226,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setStatus('Done.', 'success');
         } catch (err) {
             console.error(err);
-            setStatus('Failed to summarize.', 'error');
+            setStatus(err?.message === 'AI_UNAVAILABLE'
+                ? 'AI unavailable on this device/browser.'
+                : 'Failed to summarize.', 'error');
         } finally {
             setBusy(false);
         }
@@ -184,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setBusy(true, 'Generating 5 bullets...');
 
         try {
-            const out = await callChromeAI('bullets', src);
+            const out = await runWithChromeAI('refine', src);
             tabs.bullets.out.textContent = out;
             activateTab('bullets');
             saveState(undefined, {
@@ -195,7 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setStatus('Done.', 'success');
         } catch (err) {
             console.error(err);
-            setStatus('Failed to refine.', 'error');
+            setStatus(err?.message === 'AI_UNAVAILABLE'
+                ? 'AI unavailable on this device/browser.'
+                : 'Failed to refine.', 'error');
         } finally {
             setBusy(false);
         }
@@ -207,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setBusy(true, 'Proofreading...');
 
         try {
-            const out = await callChromeAI('proofread', src);
+            const out = await runWithChromeAI('proofread', src);
             tabs.proof.out.textContent = out;
             activateTab('proof');
             saveState(undefined, {
@@ -218,7 +276,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setStatus('Done.', 'success');
         } catch (err) {
             console.error(err);
-            setStatus('Failed to proofread.', 'error');
+            setStatus(err?.message === 'AI_UNAVAILABLE'
+                ? 'AI unavailable on this device/browser.'
+                : 'Failed to proofread.', 'error');
         } finally {
             setBusy(false);
         }
@@ -238,39 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    function activateTab(name) {
-        Object.entries(tabs).forEach(([key, { btn, panel }]) => {
-            const isActive = key === name;
-            btn.classList.toggle('active', isActive);
-            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-            panel.classList.toggle('hidden', !isActive);
-        });
-    }
-
-    tabs.summary.btn.addEventListener('click', () => activateTab('summary'));
-    tabs.bullets.btn.addEventListener('click', () => activateTab('bullets'));
-    tabs.proof.btn.addEventListener('click', () => activateTab('proof'));
-
-    function currentTab() {
-        if (tabs.summary.btn.classList.contains('active')) return 'summary';
-        if (tabs.bullets.btn.classList.contains('active')) return 'bullets';
-        return 'proof';
-    }
-
     btnCopy.addEventListener('click', async () => {
         const t = currentTab();
         const content = tabs[t].out.textContent || '';
-        if (!content) {
-            setStatus('Nothing to copy.', 'error');
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(content);
-            setStatus(`Copied ${content.length} chars from ${t}.`, 'success');
-        } catch (err) {
-            console.error('Clipboard failed', err);
-            setStatus('Failed to copy (clipboard not available?).', 'error');
-        }
+        if (!content) return setStatus('Nothing to copy.', 'error');
+
+        await copyText(content, (m, kind = 'success') => setStatus(m, kind));
+        setStatus(`Copied ${content.length} chars from ${t}.`, 'success');
     });
 
     btnSave.addEventListener('click', () => {
